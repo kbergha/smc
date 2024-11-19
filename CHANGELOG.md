@@ -10,3 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - This changelog file
+- Basic project structure
+- Composer and basic autoload
+- Unit testing with PHPUnit
+
+### Changed
+
+- Updated README with project information / intentions
+- Adjusted gitignore to ignore PHPUnit files

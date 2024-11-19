@@ -16,3 +16,7 @@ composer.phar
 
 # PHPStorm
 .idea/*
+
+# PHPUnit
+/.phpunit.cache
+.phpunit.result.cache
