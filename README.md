@@ -22,6 +22,7 @@ This is not meant in any way to be a production ready CMS.
 - GitHub Dependabot
 - Docker / Docker Compose
 - Changelog
+- EditorConfig?
 
 ### PHP
 
@@ -30,6 +31,7 @@ This is not meant in any way to be a production ready CMS.
 - Xdebug
 - PSR-12 / PER-CS
 - Code linting tool(s) like PHPStan, Psalm and PHP_CodeSniffer
+- Symfony? Twig?
 
 ### HTML and CSS
 
