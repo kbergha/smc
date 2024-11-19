@@ -17,3 +17,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Updated README with project information / intentions
+- Adjusted gitignore to ignore PHPUnit files
