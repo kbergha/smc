@@ -1,0 +1,14 @@
+# Shared stack configuration (all environments)
+# Env-specific overrides go in stack.<env>.yml (e.g. stack.local.yml)
+# Install tools: devbox [-e <env>] stack install <tool> <version> [key=value ...]
+
+tools:
+  composer:
+    version: 2.10.3
+
+aliases:
+  # npm: pnpm
+
+certificates:
+  smc:
+    - smc.localhost

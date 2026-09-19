@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace hello;
+namespace Tests\Unit\Hello;
 
 use PHPUnit\Framework\TestCase;
-use Smc\hello\HelloWorld;
+use Smc\Hello\HelloWorld;
 use TypeError;
 
 final class HelloWorldTest extends TestCase

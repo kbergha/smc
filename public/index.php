@@ -1,6 +1,6 @@
-<?php
-require_once __DIR__ . '/../vendor/autoload.php';
+<?php declare(strict_types=1);
+
+require_once dirname(__DIR__) . '/bootstrap.php';
 
 use Smc\Hello\HelloWorld;
-
 echo HelloWorld::sayHello("SMC");

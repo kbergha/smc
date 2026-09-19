@@ -1,8 +1,37 @@
 {
+    "type": "project",
+    "prefer-stable": true,
     "require-dev": {
-        "phpunit/phpunit": "^11.4"
+        "phpunit/phpunit": "^11.5"
     },
     "autoload": {
-        "psr-4": {"Smc\\": "src/"}
+        "psr-4": {
+            "Smc\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "optimize-autoloader": true,
+        "platform": {
+            "php": "8.5.10",
+            "ext-json": "1",
+            "ext-zip": "1",
+            "ext-bcmath": "1",
+            "ext-intl": "1",
+            "ext-mbstring": "1"
+        },
+        "policy": {
+            "advisories": {
+                "ignore-severity": ["low"]
+            },
+            "abandoned": {
+                "block": true
+            }
+        }
     }
 }
