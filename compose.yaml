@@ -1,0 +1,43 @@
+# All configuration is via environment variables (set in .env).
+#
+# Configuration (set in .env):
+#   MYSQL_PORT=3306             — host port for MySQL (default: 3306)
+#   WWWUID / WWWGID             — file permission user/group ID (default: 1000)
+
+services:
+  smc:
+    container_name: smc
+    image: smc
+    build:
+      context: ./
+      dockerfile: .docker/Dockerfile
+      args:
+        # Check your user id with "id -u" and group id with "id -g".
+        # Probably 1000:1000 on Linux/WSL, 501:20 on Mac.
+        WWWUID: ${WWWUID:-1000}
+        WWWGID: ${WWWGID:-1000}
+    env_file: .env
+    volumes:
+      - ./public/index.php:/app/public/index.php
+      - ./bootstrap.php:/app/bootstrap.php
+      - ./src:/app/src/
+      - ./vendor:/app/vendor
+      - ./.docker/config/x-local-development-overrides-php.ini:/usr/local/etc/php/conf.d/x-local-development-overrides-php.ini
+      - smc-files:/app/public/files
+    expose:
+      - 8080
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    labels:
+      - 'traefik.http.routers.smc.rule=Host(`smc.localhost`)'
+      - 'traefik.http.services.smc.loadbalancer.server.port=8080'
+      - 'traefik.http.routers.smc.priority=10'
+
+volumes:
+  smc-db:
+  smc-files:
+
+networks:
+  default:
+    name: devbox
+    external: true
