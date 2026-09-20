@@ -15,7 +15,10 @@
   "autoload-dev": {
     "psr-4": {
       "Tests\\": "tests/"
-    }
+    },
+    "files": [
+      "src/helpers.php"
+    ]
   },
   "config": {
     "sort-packages": true,
@@ -27,7 +30,8 @@
       "ext-bcmath": "1",
       "ext-intl": "1",
       "ext-mbstring": "1",
-      "ext-sqlite3": "1"
+      "ext-sqlite3": "1",
+      "ext-uri": "1"
     },
     "policy": {
       "advisories": {
@@ -43,6 +47,7 @@
     "ext-sqlite3": "*",
     "ext-pdo_sqlite": "*",
     "ext-pdo": "*",
-    "ext-mbstring": "*"
+    "ext-mbstring": "*",
+    "ext-uri": "*"
   }
 }
