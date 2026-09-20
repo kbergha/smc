@@ -1,9 +1,9 @@
 # MultiStage - PHP libraries
 FROM composer:2 AS composer
 COPY composer.json composer.lock ./
-RUN composer install --no-interaction --no-scripts
+RUN composer install --no-interaction --no-scripts --no-dev
 COPY . .
-RUN composer dumpautoload -a
+RUN composer dumpautoload -a --no-dev
 
 # MultiStage - PHP Webserver
 FROM php:8.5.10-apache-trixie
@@ -41,15 +41,21 @@ RUN apt-get install -y libzip-dev zip libicu-dev \
 COPY ./.docker/config/opcache.ini $PHP_INI_DIR/conf.d/
 COPY ./.docker/config/opcache-blacklist.txt $PHP_INI_DIR/opcache-blacklist.txt
 
-# For local development
-RUN mkdir -p /app/public/files
-RUN chown -R www-data:www-data /app/public/files
 
 # Copy web files
 COPY ./public/index.php /app/public/index.php
 
 # Copy other stuff.
 COPY ./src /app/src
+COPY ./migrations /app/migrations
+COPY ./commands /app/commands
+
+# Make directories
+RUN mkdir -p /app/public/files
+RUN chown -R www-data:www-data /app/public/files
+
+RUN mkdir -p /app/sqlite
+RUN chown -R www-data:www-data /app/sqlite
 
 # PHP.ini
 COPY ./.docker/config/php.ini $PHP_INI_DIR/php.ini

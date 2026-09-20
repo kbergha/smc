@@ -26,7 +26,7 @@ This is not meant in any way to be a production ready CMS.
 
 ### PHP
 
-- PHP 8.3 / 8.4
+- PHP 8.5
 - PHPUnit
 - Xdebug
 - PSR-12 / PER-CS
@@ -40,7 +40,7 @@ No frameworks? Modern CSS only?
 
 ### Database
 
-Redis?
+SQLite?
 
 ### JavaScript
 
