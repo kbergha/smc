@@ -22,8 +22,11 @@ services:
       - ./bootstrap.php:/app/bootstrap.php
       - ./src:/app/src/
       - ./vendor:/app/vendor
+      - ./commands:/app/commands
+      - ./migrations:/app/migrations
       - ./.docker/config/x-local-development-overrides-php.ini:/usr/local/etc/php/conf.d/x-local-development-overrides-php.ini
       - smc-files:/app/public/files
+      - smc-db:/app/sqlite
     expose:
       - 8080
     extra_hosts:

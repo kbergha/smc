@@ -27,3 +27,12 @@ composer.phar
 
 .devbox/*
 !.devbox/stack*.yml
+
+.claude/
+
+# SQLite
+sqlite/*
+!sqlite/.gitkeep
+
+# Local notes
+/TODO.md
