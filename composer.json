@@ -2,7 +2,7 @@
     "type": "project",
     "prefer-stable": true,
     "require-dev": {
-        "phpunit/phpunit": "^11.5"
+        "phpunit/phpunit": "^13.3"
     },
     "autoload": {
         "psr-4": {
