@@ -2,16 +2,11 @@
 
 require_once dirname(__DIR__) . '/bootstrap.php';
 
-use Smc\Http\MethodNotAllowedHandler;
-use Smc\Http\NotFoundHandler;
-use Smc\Router\MethodNotAllowedException;
-use Smc\Router\NotFoundException;
 use Smc\Router\Router;
 
 try {
     new Router()->handle();
-} catch (MethodNotAllowedException $e) {
-    new MethodNotAllowedHandler()->handle($e);
-} catch (NotFoundException $e) {
-    new NotFoundHandler()->handle($e);
+} catch (Exception $e) {
+    echo "It's dead Jim!<br>";
+    echo $e->getMessage();
 }

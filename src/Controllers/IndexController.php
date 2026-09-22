@@ -4,18 +4,16 @@ namespace Smc\Controllers;
 
 class IndexController implements ControllerInterface
 {
-    public static function routes(): array
+    public static function allowedMethods(): array
     {
-        return [
-            'GET' => [
-                '/' => 'index',
-            ],
-        ];
+        return ['index' => ['GET']];
     }
 
-    public function index(): bool
+    /**
+     * @noinspection PhpUnused
+     */
+    public function index(): void
     {
         echo "Hello world!";
-        return true;
     }
 }

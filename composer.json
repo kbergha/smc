@@ -48,6 +48,7 @@
     "ext-pdo_sqlite": "*",
     "ext-pdo": "*",
     "ext-mbstring": "*",
-    "ext-uri": "*"
+    "ext-uri": "*",
+    "ext-ctype": "*"
   }
 }

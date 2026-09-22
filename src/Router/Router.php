@@ -2,169 +2,221 @@
 
 namespace Smc\Router;
 
-use InvalidArgumentException;
 use Smc\Controllers\ControllerInterface;
+use Smc\Controllers\ErrorController;
 use Smc\Controllers\IndexController;
+use Smc\Controllers\OptionsController;
 use Smc\Controllers\PageController;
+use Smc\Controllers\PaginationController;
 
 class Router
 {
     /**
-     * Consulted only when no static frontend route matches, so a static path
-     * always wins over a page slug.
+     * Segments that take a slug in the segment directly after them, so that '/tag/php/' becomes '/tag/{slug}/'
+     * while an ordinary page path such as '/about/' is left for the PageController to resolve.
+     *
+     * @var list<string>
      */
-    private const string FRONTEND_FALLBACK = PageController::class;
-    private const string FRONTEND_FALLBACK_ACTION = 'show';
-
-    /** @var list<string> Methods the fallback may answer. Pages are read-only. */
-    private const array FALLBACK_METHODS = ['GET', 'HEAD'];
-
-    /** @var list<class-string<ControllerInterface>> */
-    private const array FRONTEND_CONTROLLERS = [
-        IndexController::class,
-    ];
-
-    /** @var list<class-string<ControllerInterface>> */
-    private const array SMC_CONTROLLERS = [];
-
-    /** @var array<string, array<string, Route>> */
-    protected array $frontendRoutes;
-
-    /** @var array<string, array<string, Route>> */
-    protected array $smcRoutes;
+    private const array SLUG_PREFIXES = [];
 
     public function __construct()
     {
-        $this->frontendRoutes = $this->collect(self::FRONTEND_CONTROLLERS);
-        $this->smcRoutes = $this->collect(self::SMC_CONTROLLERS);
+
     }
 
-    public function handle(): bool
+    public function handle(): void
     {
         $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
         $path = self::normalizePath(
             parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/'
         );
 
-        $isSmc = str_starts_with($path, '/smc/');
-        $routes = $isSmc ? $this->smcRoutes : $this->frontendRoutes;
+        [$pattern, $captures] = self::extractCaptures($path);
+        // $captures can contain more than one item, map to parameters where relevant.
 
-        $route = $this->matchWithFallback($routes, $method, $path, $isSmc);
-
-        $class = $route->controller;
-        $action = $route->action;
-
-        return new $class()->$action(...$route->arguments);
-    }
-
-    /**
-     * @param array<string, array<string, Route>> $routes
-     */
-    private function matchWithFallback(array $routes, string $method, string $path, bool $isSmc): Route
-    {
         try {
-            return $this->match($routes, $method, $path);
-        } catch (NotFoundException $exception) {
-            // A path claimed by a static route never reaches the fallback, and an
-            // unsupported method surfaces as a 405 rather than falling through.
-            if ($isSmc || !in_array($method, self::FALLBACK_METHODS, true)) {
-                throw $exception;
+            // Try known frontend paths
+            $controller = match ($pattern) {
+                '/' => [
+                    'class' => IndexController::class,
+                    'action' => 'index',
+                    'parameters' => [],
+                ],
+                '/page/{number}/' => [
+                    'class' => PaginationController::class,
+                    'action' => 'index',
+                    'parameters' => ['offset' => $captures[0]],
+                ],
+
+                default => null,
+            };
+
+            // Try known backend paths
+            if ($controller === null && str_starts_with($path, '/smc/')) {
+                // default => null,
+                // @todo:
             }
 
-            // The fallback decides for itself whether the path exists, and throws
-            // NotFoundException in turn when it does not.
-            return new Route(self::FRONTEND_FALLBACK, self::FRONTEND_FALLBACK_ACTION, [$path]);
+            // Try article / slug (will throw NotFoundException if no article is found)
+            if ($controller === null) {
+                $controller = [
+                    'class' => PageController::class,
+                    'action' => 'show',
+                    'parameters' => [
+                        'path' => $path,
+                    ]
+                ];
+            }
+
+            // OPTIONS is answered generically: the Allow header is the whole response, so the resolved action never runs.
+            //
+            // This does not verify that the resource exists. Every unmatched path resolves to PageController,
+            // so OPTIONS on an unknown slug answers 204 where GET would answer 404. Accepted for now...
+            if ($method === 'OPTIONS') {
+                self::invoke([
+                    'class' => OptionsController::class,
+                    'action' => 'show',
+                    'parameters' => [
+                        'allowed' => self::allowedMethodsFor($controller['class'], $controller['action']),
+                    ],
+                ]);
+
+                return;
+            }
+
+            // Make sure the current method is allowed for the current action.
+            self::assertMethodAllowed($controller['class'], $controller['action'], $method, $path);
+
+            // Invoking inside the try is what lets the catches below see a NotFoundException thrown by the controller itself,
+            // such as PageController failing to find an article with the path / slug.
+            self::invoke($controller);
+
+            return;
+
+        } catch (NotFoundException $e) {
+            $controller = [
+                'class' => ErrorController::class,
+                'action' => 'show',
+                'parameters' => [
+                    'code' => 404, // Move to exception.
+                    'path' => $path,
+                    'message' => $e->getMessage(),
+                ]
+            ];
+        } catch (MethodNotAllowedException $e) {
+            $controller = [
+                'class' => ErrorController::class,
+                'action' => 'show',
+                'parameters' => [
+                    'code' => 405, // Move to exception.
+                    'path' => $path,
+                    'message' => $e->getMessage(),
+                    'allowed' => $e->allowed,
+                ]
+            ];
         }
+
+        // Invoke the error controller from the catch statements above.
+        // It is dispatched directly so assertMethodAllowed() does not apply to it.
+        self::invoke($controller);
     }
 
     /**
-     * @param  list<class-string<ControllerInterface>> $controllers
-     * @return array<string, array<string, Route>>
+     * @param array{class: class-string<ControllerInterface>, action: string, parameters: array} $controller
      */
-    private function collect(array $controllers): array
+    private static function invoke(array $controller): void
     {
-        $routes = [];
-
-        foreach ($controllers as $controller) {
-            foreach ($controller::routes() as $method => $actions) {
-                $method = strtoupper($method);
-
-                foreach ($actions as $path => $action) {
-                    $normalized = self::normalizePath($path);
-
-                    if (!method_exists($controller, $action)) {
-                        throw new InvalidArgumentException(
-                            "{$method} {$normalized} points at {$controller}::{$action}(), which does not exist."
-                        );
-                    }
-
-                    if (isset($routes[$method][$normalized])) {
-                        throw new InvalidArgumentException(
-                            "{$method} {$normalized} is claimed by both {$routes[$method][$normalized]} and {$controller}::{$action}()."
-                        );
-                    }
-
-                    $routes[$method][$normalized] = new Route($controller, $action);
-                }
-            }
-        }
-
-        return $routes;
+        new $controller['class']()->{$controller['action']}(...$controller['parameters']);
     }
 
     /**
-     * @param array<string, array<string, Route>> $routes
+     * Rejects a request whose method the target action does not accept.
+     *
+     * HEAD and OPTIONS are derived here rather than declared per controller,
+     * since they are protocol rules identical for every action.
+     *
+     * @param class-string<ControllerInterface> $class
      */
-    private function match(array $routes, string $method, string $path): Route
+    private static function assertMethodAllowed(string $class, string $action, string $method, string $path): void
     {
-        // RFC 9110: a server supporting GET must support HEAD on the same resource.
-        $lookup = $method === 'HEAD' ? 'GET' : $method;
+        $allowed = self::allowedMethodsFor($class, $action);
 
-        if (isset($routes[$lookup][$path])) {
-            return $routes[$lookup][$path];
-        }
-
-        $allowed = self::allowedMethods($routes, $path);
-
-        if ($allowed !== []) {
+        if (!in_array($method, $allowed, true)) {
             throw new MethodNotAllowedException($path, $method, $allowed);
         }
-
-        throw new NotFoundException($path);
     }
 
     /**
-     * @param  array<string, array<string, Route>> $routes
+     * Everything an action accepts: what it declares, plus what the protocol
+     * implies. Also used to build the Allow header for 405 and OPTIONS.
+     *
+     * @param  class-string<ControllerInterface> $class
      * @return list<string>
      */
-    private static function allowedMethods(array $routes, string $path): array
+    private static function allowedMethodsFor(string $class, string $action): array
     {
-        $allowed = [];
+        // An action absent from allowedMethods() accepts nothing.
+        $allowed = $class::allowedMethods()[$action] ?? [];
 
-        foreach ($routes as $method => $paths) {
-            if (isset($paths[$path])) {
-                $allowed[] = $method;
-            }
-        }
-
-        // An unknown path supports nothing, and must stay a 404 rather than
-        // picking up the implicit methods below and becoming a 405.
         if ($allowed === []) {
             return [];
         }
 
+        // RFC 9110: supporting GET means supporting HEAD on the same resource.
         if (in_array('GET', $allowed, true) && !in_array('HEAD', $allowed, true)) {
             $allowed[] = 'HEAD';
         }
 
-        // The front controller answers OPTIONS generically for every known path.
-        if (!in_array('OPTIONS', $allowed, true)) {
-            $allowed[] = 'OPTIONS';
-        }
-
+        $allowed[] = 'OPTIONS';
         sort($allowed);
 
         return $allowed;
+    }
+
+    /**
+     * Rewrites dynamic segments to placeholders so a path can still be matched
+     * as a literal string, and returns the values that were replaced.
+     *
+     *   '/page/12/'        -> ['/page/{number}/',            [12]]
+     *   '/tag/php/'        -> ['/tag/{slug}/',               ['php']]    (with 'tag' in SLUG_PREFIXES)
+     *   '/some/123/path/'  -> ['/some/{number}/path/',       [123]]      ('path' is not after a prefix, so it stays literal)
+     *   '/tag/php/page/2/' -> ['/tag/{slug}/page/{number}/', ['php', 2]] (with 'tag' in SLUG_PREFIXES)
+     *   '/about/'          -> ['/about/',                    []]
+     *
+     * Captures are positional and in path order: the matching route decides what
+     * each one means.
+     *
+     * @return array{string, list<int|string>}
+     */
+    protected static function extractCaptures(string $path): array
+    {
+        if ($path === '/') {
+            return ['/', []];
+        }
+
+        $original = explode('/', trim($path, '/'));
+        $segments = $original;
+        $captures = [];
+
+        foreach ($original as $index => $segment) {
+            // Digits are a closed character class, so a number is recognisable
+            // without knowing anything about the routes.
+            if (ctype_digit($segment)) {
+                $captures[] = (int) $segment;
+                $segments[$index] = '{number}';
+
+                continue;
+            }
+
+            // A slug is not, so it is only recognised where a prefix says one
+            // belongs. Otherwise, every path would become '/{slug}/'.
+            if ($index > 0 && in_array($original[$index - 1], self::SLUG_PREFIXES, true)) {
+                $captures[] = $segment;
+                $segments[$index] = '{slug}';
+            }
+        }
+
+        return ['/' . implode('/', $segments) . '/', $captures];
     }
 
     protected static function normalizePath(string $path): string

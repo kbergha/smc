@@ -5,12 +5,17 @@ namespace Smc\Controllers;
 interface ControllerInterface
 {
     /**
-     * Routes this controller answers to, as HTTP method => path => action.
+     * HTTP methods each action accepts, as action name => methods.
      *
-     * The action is the name of a public, non-static method on this class.
-     * Paths are normalised by the router, so '/all', 'all' and '/all/' are equivalent.
+     * Only explicit methods belong here. HEAD is implied by GET, and OPTIONS is
+     * answered generically - the router derives both, so listing them by hand
+     * would only be duplication waiting to go stale.
      *
-     * @return array<string, array<string, string>>
+     * An action missing from this list accepts nothing, and the router answers
+     * 405. That is deliberate: a missing entry means either a new action nobody
+     * declared or a route pointing at the wrong name, and both should surface.
+     *
+     * @return array<string, list<string>>
      */
-    public static function routes(): array;
+    public static function allowedMethods(): array;
 }
