@@ -3,11 +3,11 @@
 namespace Smc\Router;
 
 use Smc\Controllers\ControllerInterface;
+use Smc\Controllers\DashboardController;
 use Smc\Controllers\ErrorController;
-use Smc\Controllers\IndexController;
+use Smc\Controllers\LoginController;
 use Smc\Controllers\OptionsController;
-use Smc\Controllers\PageController;
-use Smc\Controllers\PaginationController;
+use Smc\Guards\GuardException;
 
 class Router
 {
@@ -32,48 +32,29 @@ class Router
         );
 
         [$pattern, $captures] = self::extractCaptures($path);
-        // $captures can contain more than one item, map to parameters where relevant.
+        // $captures can contain more than one item, map to controller parameters where relevant.
 
         try {
-            // Try known frontend paths
             $controller = match ($pattern) {
-                '/' => [
-                    'class' => IndexController::class,
+                '/', '/login/' => [
+                    'class' => LoginController::class,
+                    'action' => 'loginForm',
+                    'parameters' => [],
+                ],
+                '/dashboard/' => [
+                    'class' => DashboardController::class,
                     'action' => 'index',
                     'parameters' => [],
                 ],
-                '/page/{number}/' => [
-                    'class' => PaginationController::class,
-                    'action' => 'index',
-                    'parameters' => ['offset' => $captures[0]],
-                ],
-
-                default => null,
+                default => throw new NotFoundException($path),
             };
-
-            // Try known backend paths
-            if ($controller === null && str_starts_with($path, '/smc/')) {
-                // default => null,
-                // @todo:
-            }
-
-            // Try article / slug (will throw NotFoundException if no article is found)
-            if ($controller === null) {
-                $controller = [
-                    'class' => PageController::class,
-                    'action' => 'show',
-                    'parameters' => [
-                        'path' => $path,
-                    ]
-                ];
-            }
 
             // OPTIONS is answered generically: the Allow header is the whole response, so the resolved action never runs.
             //
             // This does not verify that the resource exists. Every unmatched path resolves to PageController,
-            // so OPTIONS on an unknown slug answers 204 where GET would answer 404. Accepted for now...
+            // so OPTIONS on an unknown slug / path answers 204 where GET would answer 404. Accepted for now...
             if ($method === 'OPTIONS') {
-                self::invoke([
+                self::dispatch([
                     'class' => OptionsController::class,
                     'action' => 'show',
                     'parameters' => [
@@ -87,18 +68,17 @@ class Router
             // Make sure the current method is allowed for the current action.
             self::assertMethodAllowed($controller['class'], $controller['action'], $method, $path);
 
-            // Invoking inside the try is what lets the catches below see a NotFoundException thrown by the controller itself,
-            // such as PageController failing to find an article with the path / slug.
-            self::invoke($controller);
+            // Dispatching / invoking inside the try is what lets the catches below see a NotFoundException thrown by the controller itself.
+            self::dispatch($controller);
 
             return;
 
-        } catch (NotFoundException $e) {
+        } catch (NotFoundException|GuardException $e) {
             $controller = [
                 'class' => ErrorController::class,
                 'action' => 'show',
                 'parameters' => [
-                    'code' => 404, // Move to exception.
+                    'code' => $e->getCode(),
                     'path' => $path,
                     'message' => $e->getMessage(),
                 ]
@@ -108,7 +88,7 @@ class Router
                 'class' => ErrorController::class,
                 'action' => 'show',
                 'parameters' => [
-                    'code' => 405, // Move to exception.
+                    'code' => $e->getCode(),
                     'path' => $path,
                     'message' => $e->getMessage(),
                     'allowed' => $e->allowed,
@@ -116,17 +96,19 @@ class Router
             ];
         }
 
-        // Invoke the error controller from the catch statements above.
+        // Invoke / dispatch the error controller from the catch statements above.
         // It is dispatched directly so assertMethodAllowed() does not apply to it.
-        self::invoke($controller);
+        self::dispatch($controller);
     }
 
     /**
+     * Hands a resolved route to its controller.
+     *
      * @param array{class: class-string<ControllerInterface>, action: string, parameters: array} $controller
      */
-    private static function invoke(array $controller): void
+    private static function dispatch(array $controller): void
     {
-        new $controller['class']()->{$controller['action']}(...$controller['parameters']);
+        new $controller['class']()->dispatch($controller['action'], $controller['parameters']);
     }
 
     /**
@@ -147,8 +129,8 @@ class Router
     }
 
     /**
-     * Everything an action accepts: what it declares, plus what the protocol
-     * implies. Also used to build the Allow header for 405 and OPTIONS.
+     * Everything an action accepts: what it declares, plus what the protocol implies.
+     * Also used to build the Allow header for 405 and OPTIONS.
      *
      * @param  class-string<ControllerInterface> $class
      * @return list<string>

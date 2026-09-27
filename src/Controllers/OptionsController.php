@@ -2,7 +2,7 @@
 
 namespace Smc\Controllers;
 
-class OptionsController implements ControllerInterface
+class OptionsController extends Controller
 {
     /**
      * Never reached through a route - the router dispatches this directly for

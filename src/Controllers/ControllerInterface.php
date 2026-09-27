@@ -2,6 +2,8 @@
 
 namespace Smc\Controllers;
 
+use Smc\Guards\GuardException;
+
 interface ControllerInterface
 {
     /**
@@ -18,4 +20,15 @@ interface ControllerInterface
      * @return array<string, list<string>>
      */
     public static function allowedMethods(): array;
+
+    /**
+     * Run $action, having first run whatever must hold before it may run.
+     *
+     * This is the only entry point the router uses, so guarding is a property of dispatch(),
+     * rather than something each action has to remember.
+     *
+     * @param  array<string, mixed>|list<mixed> $parameters Passed to the action as named or positional arguments.
+     * @throws GuardException When a guard rejects the request.
+     */
+    public function dispatch(string $action, array $parameters = []): void;
 }

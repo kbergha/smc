@@ -2,7 +2,7 @@
 
 namespace Smc\Controllers;
 
-class ErrorController implements ControllerInterface
+class ErrorController extends Controller
 {
     /**
      * Never reached through a route - the router dispatches this directly when
@@ -15,10 +15,9 @@ class ErrorController implements ControllerInterface
     }
 
     /**
-     * @noinspection PhpUnused
-     */
-    /**
      * @param list<string>|null $allowed Methods the resource accepts. Only a 405 has one.
+     *
+     * @noinspection PhpUnused
      */
     public function show(int $code, string $path, ?string $message, ?array $allowed = null): void
     {

@@ -12,6 +12,7 @@ final class MethodNotAllowedException extends RuntimeException
         public readonly string $method,
         public readonly array $allowed,
     ) {
+        $this->code = 405;
         parent::__construct("{$method} is not allowed for {$path}");
     }
 }
