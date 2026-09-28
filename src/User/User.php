@@ -31,7 +31,7 @@ class User
     public function login(?string $username, ?string $password): void
     {
         if (is_null($username) || is_null($password)) {
-             throw new UserException('Invalid username or password');
+            throw new UserException('Invalid username or password');
         }
 
         // @todo: status
