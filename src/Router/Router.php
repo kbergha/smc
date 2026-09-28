@@ -36,9 +36,14 @@ class Router
 
         try {
             $controller = match ($pattern) {
-                '/', '/login/' => [
+                '/' => [
                     'class' => LoginController::class,
                     'action' => 'loginForm',
+                    'parameters' => [],
+                ],
+                '/login/' => [
+                    'class' => LoginController::class,
+                    'action' => 'login',
                     'parameters' => [],
                 ],
                 '/dashboard/' => [

@@ -31,10 +31,11 @@ RUN apt-get update \
     && apt-get install -y apt-utils
 
 
-RUN apt-get install -y libzip-dev zip libicu-dev \
+RUN apt-get install -y libzip-dev zip libicu-dev libtidy-dev \
     && docker-php-ext-configure zip \
     && docker-php-ext-configure intl \
-    && docker-php-ext-install zip intl bcmath
+    && docker-php-ext-configure tidy \
+    && docker-php-ext-install zip intl bcmath tidy
 
 # OPCache
 # RUN docker-php-ext-install opcache && docker-php-ext-configure opcache --enable-opcache
@@ -57,12 +58,13 @@ RUN chown -R www-data:www-data /app/public/files
 RUN mkdir -p /app/sqlite
 RUN chown -R www-data:www-data /app/sqlite
 
+RUN mkdir -p /app/templates
+
 # PHP.ini
 COPY ./.docker/config/php.ini $PHP_INI_DIR/php.ini
 
 # Vendor folder from composer
 COPY --from=composer /app/vendor /app/vendor
-
 
 # Apache config
 

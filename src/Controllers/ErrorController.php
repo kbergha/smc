@@ -21,7 +21,7 @@ class ErrorController extends Controller
      */
     public function show(int $code, string $path, ?string $message, ?array $allowed = null): void
     {
-        // Move to some Header-class?
+        // todo: Move to some Header-class?
         http_response_code($code);
 
         // RFC 9110 requires a 405 to advertise the methods that are supported.

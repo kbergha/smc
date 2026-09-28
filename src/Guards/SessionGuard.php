@@ -13,23 +13,16 @@ class SessionGuard implements GuardInterface
             'cookie_lifetime' => 86400, // 1 day
             'cookie_httponly' => true,
             'cookie_secure' => true,
-            'name' => "SMC"
+            'cookie_samesite' => 'Strict',
+            'name' => 'SMC',
         ]);
-
-        // Fake it. We only care if it failes / is false
-        $sessionRegenerated = true;
-
-        // Regenerate session id 10% of the time.
-        if (random_int(0, 99) <= 9) {
-            $sessionRegenerated = session_regenerate_id(true);
-        }
 
         if ($sessionStarted === false) {
             throw new GuardException('Session could not be started', 500);
         }
 
-        if ($sessionRegenerated === false) {
-            throw new GuardException('Session could not be regenerated', 500);
-        }
+        // Todo: sjekke denne også?
+        // session_status() !== PHP_SESSION_ACTIVE
+
     }
 }
