@@ -2,6 +2,7 @@
 
 namespace Smc\Guards;
 
+use Smc\Router\RedirectException;
 use Smc\User\User;
 
 class LoginGuard implements GuardInterface
@@ -11,13 +12,10 @@ class LoginGuard implements GuardInterface
         $user = new User();
 
         // todo: period or config
-        // todo: own exception that does the redirect?
         if (!$user->isLoggedIn() || $user->loggedInForSeconds() >= 86400) {
             $user->logout();
-            // todo: Move to some Header-class?
-            http_response_code(302);
-            header('Location: /');
-            exit;
+            // todo: set flash message?
+            throw new RedirectException('/');
         }
     }
 }

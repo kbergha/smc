@@ -1,0 +1,30 @@
+parameters:
+    level: 8
+
+    paths:
+        - src
+        - tests
+        - commands
+        - public
+
+    # helpers.php is autoloaded through composer's "files", not PSR-4, so PHPStan
+    # has to be told about it or every helper call reads as an unknown function.
+    bootstrapFiles:
+        - src/helpers.php
+
+    # PHPDoc is a promise, not a proof. Without this, a runtime check that guards
+    # against a type the docblock claims cannot happen is reported as redundant -
+    # which is exactly backwards for input that crosses a trust boundary, such as
+    # a session value or $_POST.
+    treatPhpDocTypesAsCertain: false
+
+    ignoreErrors:
+        # These two tests call sayHello() with the wrong type and with no argument
+        # at all, on purpose, to assert the TypeError. PHPStan is right that the
+        # calls are invalid - being invalid is the subject of the test.
+        -
+            identifier: argument.type
+            path: tests/Unit/Hello/HelloWorldTest.php
+        -
+            identifier: arguments.count
+            path: tests/Unit/Hello/HelloWorldTest.php

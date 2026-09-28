@@ -5,8 +5,8 @@ namespace Smc\User;
 use DateMalformedStringException;
 use DateTimeImmutable;
 use PDO;
-use RuntimeException;
 use Smc\Database\Connection;
+use Smc\Router\RedirectException;
 
 class User
 {
@@ -31,11 +31,11 @@ class User
     public function login(?string $username, ?string $password): void
     {
         if (is_null($username) || is_null($password)) {
-            // @todo: egen exception
-            throw new RuntimeException('Invalid username or password');
+             throw new UserException('Invalid username or password');
         }
 
-        $statement = $this->pdo()->prepare('SELECT password FROM users WHERE username = :username LIMIT 1');
+        // @todo: status
+        $statement = $this->pdo()->prepare('SELECT id, password FROM users WHERE username = :username LIMIT 1');
         $statement->bindParam(':username', $username);
         $statement->execute();
 
@@ -46,8 +46,7 @@ class User
             // Try to mitigate username enumeration by always doing the same work as when a user exists.
             password_hash(self::TIMING_DUMMY_PASSWORD, PASSWORD_DEFAULT);
 
-            // @todo: egen exception
-            throw new RuntimeException('Invalid username or password');
+            throw new UserException('Invalid username or password');
         }
 
         $storedHash = $result['password'];
@@ -57,33 +56,47 @@ class User
             // Check if the algorithm or the options have changed
             if (password_needs_rehash($storedHash, PASSWORD_DEFAULT)) {
                 // If so, create a new hash, and replace the old one
-                // $newHash = password_hash($password, PASSWORD_DEFAULT);
+                $newHash = password_hash($password, PASSWORD_DEFAULT);
                 // Update the user record with the $newHash
-                // @todo
+                $newHashStatement = $this->pdo()->prepare('UPDATE users SET password = :password WHERE id = :id');
+                $newHashStatement->bindParam(':id', $result['id'], PDO::PARAM_INT);
+                $newHashStatement->bindParam(':password', $newHash);
+                $newHashStatement->execute();
+
+                if ($newHashStatement->rowCount() === 0) {
+                    throw new UserException('Unable to update hash');
+                }
+
+                unset($newHash, $newHashStatement);
             }
 
             // Perform the login.
-            session_regenerate_id(true);
+            $loggedInAt = new \DateTime()->format(DATE_ATOM);
+            Session::regenerateId(true);
+            Session::setVariable('loggedIn', true);
+            Session::setVariable('loggedInAt', $loggedInAt);
+            Session::setVariable('loggedInUserId', $result['id']);
 
-            $_SESSION['loggedIn'] = true;
-            $_SESSION['loggedInAt'] = new \DateTime()->format(DATE_ATOM);
+            $lastLoginStatement = $this->pdo()->prepare('UPDATE users SET last_login = :last_login WHERE id = :id');
+            $lastLoginStatement->bindParam(':id', $result['id'], PDO::PARAM_INT);
+            $lastLoginStatement->bindParam(':last_login', $loggedInAt);
+            $lastLoginStatement->execute();
 
-            // todo: update last login in db.
+            if ($lastLoginStatement->rowCount() === 0) {
+                throw new UserException('Unable to update required user data');
+            }
 
-            // @todo: own header class
-            http_response_code(302);
-            header('Location: /dashboard/');
-            exit;
+            unset($lastLoginStatement, $loggedInAt, $result);
 
+            throw new RedirectException('/dashboard/');
         } else {
-            // @todo: egen exception
-            throw new RuntimeException('Invalid username or password');
+            throw new UserException('Invalid username or password');
         }
     }
 
     public function isLoggedIn(): bool
     {
-        return isset($_SESSION['loggedIn']) && $_SESSION['loggedIn'] === true;
+        return Session::getVariable('loggedIn') ?? false;
     }
 
     /**
@@ -99,7 +112,7 @@ class User
             return 0;
         }
 
-        $loggedInAt = $_SESSION['loggedInAt'] ?? null;
+        $loggedInAt = Session::getVariable('loggedInAt');
 
         if (!is_string($loggedInAt)) {
             return PHP_INT_MAX;
@@ -117,7 +130,6 @@ class User
 
     public function logout(): void
     {
-        $_SESSION = [];
-        session_destroy();
+        Session::destroy();
     }
 }

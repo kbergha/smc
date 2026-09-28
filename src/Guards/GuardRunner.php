@@ -8,7 +8,7 @@ final class GuardRunner
      * Runs every guard that applies to $action, wildcard guards first.
      * A guard named twice runs once, array_unique keeps the first occurrence
      *
-     * @param  array<string, list<class-string<GuardInterface>>> $guardMap
+     * @param  array<string, class-string<GuardInterface>|list<class-string<GuardInterface>>> $guardMap
      * @throws GuardException
      */
     public static function run(string $action, array $guardMap): void

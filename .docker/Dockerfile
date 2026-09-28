@@ -50,6 +50,7 @@ COPY ./public/index.php /app/public/index.php
 COPY ./src /app/src
 COPY ./migrations /app/migrations
 COPY ./commands /app/commands
+COPY ./templates /app/templates
 
 # Make directories
 RUN mkdir -p /app/public/files
@@ -57,8 +58,6 @@ RUN chown -R www-data:www-data /app/public/files
 
 RUN mkdir -p /app/sqlite
 RUN chown -R www-data:www-data /app/sqlite
-
-RUN mkdir -p /app/templates
 
 # PHP.ini
 COPY ./.docker/config/php.ini $PHP_INI_DIR/php.ini
