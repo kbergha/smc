@@ -31,6 +31,7 @@ class ErrorController extends Controller
             Header::setHeader('Allow', implode(', ', $allowed));
         }
 
+        $message = htmlspecialchars($message ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         echo "Sorry, something went wrong! {$code} - {$message}";
     }
 }

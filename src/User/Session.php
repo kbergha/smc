@@ -38,9 +38,22 @@ class Session
         $_SESSION[$name] = $value;
     }
 
+    public static function unsetVariable(string $name): void
+    {
+        unset($_SESSION[$name]);
+    }
+
+
     public static function destroy(): void
     {
         $_SESSION = [];
         session_destroy();
+    }
+
+    public static function assertSessionIsActive(): void
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            throw new SessionException('Session is not active', 500);
+        }
     }
 }

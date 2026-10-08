@@ -49,9 +49,6 @@ class Router
             };
 
             // OPTIONS is answered generically: the Allow header is the whole response, so the resolved action never runs.
-            //
-            // This does not verify that the resource exists. Every unmatched path resolves to PageController,
-            // so OPTIONS on an unknown slug / path answers 204 where GET would answer 404. Accepted for now...
             if ($method === 'OPTIONS') {
                 self::dispatch([
                     'class' => OptionsController::class,
@@ -101,6 +98,16 @@ class Router
                     'path' => $path,
                     'message' => $e->getMessage(),
                     'allowed' => $e->allowed,
+                ]
+            ];
+        } catch (RendererException $e) {
+            $controller = [
+                'class' => ErrorController::class,
+                'action' => 'show',
+                'parameters' => [
+                    'code' => $e->getCode(),
+                    'path' => $path,
+                    'message' => $e->getMessage(),
                 ]
             ];
         }

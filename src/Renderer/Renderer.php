@@ -2,10 +2,9 @@
 
 namespace Smc\Renderer;
 
+use Smc\Twig\CsrfExtension;
 use Twig\Environment;
-use Twig\Error\LoaderError;
-use Twig\Error\RuntimeError;
-use Twig\Error\SyntaxError;
+use Twig\Error\Error as TwigError;
 use Twig\Loader\FilesystemLoader;
 use Twig\TemplateWrapper;
 
@@ -21,10 +20,10 @@ class Renderer
 
             // todo: options, like cache.
             $twig = new Environment($loader);
-            //$twig->addExtension(new Extension());
+            $twig->addExtension(new CsrfExtension());
 
             $this->template = $twig->load($templateToRender);
-        } catch (LoaderError|SyntaxError|RuntimeError $e) {
+        } catch (TwigError $e) {
             throw new RendererException($e->getMessage(), 500, $e);
         }
     }
@@ -32,6 +31,10 @@ class Renderer
     public function render(): void
     {
         // todo: tidy, men med html5
-        echo $this->template->render();
+        try {
+            echo $this->template->render();
+        } catch (TwigError $e) {
+            throw new RendererException($e->getMessage(), 500, $e);
+        }
     }
 }

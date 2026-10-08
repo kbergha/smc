@@ -4,6 +4,6 @@ namespace Smc\User;
 
 use RuntimeException;
 
-final class UserException extends RuntimeException
+final class SessionException extends RuntimeException
 {
 }

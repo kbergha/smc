@@ -4,13 +4,14 @@
 
 {% block content %}
   <h1>Log in to SMC</h1>
-  <form action="/login" method="post">
+  <form action="/login/" method="post">
     <label>
       <input type="text" name="username" placeholder="Username" />
     </label>
     <label>
       <input type="password" name="password" placeholder="Password" />
     </label>
+    <input type="hidden" name="{{ csrfTokenName() }}" value="{{ csrfTokenValue() }}" />
     <input type="submit" value="Login" />
   </form>
 {% endblock %}
