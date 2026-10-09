@@ -25,11 +25,15 @@ abstract class Controller implements ControllerInterface
     }
 
     /**
-     * Run guards first, then call action with parameters.
+     * Run guards first, then call action with parameters
      */
     final public function dispatch(string $action, array $parameters = []): void
     {
         GuardRunner::run($action, static::requiredGuards());
+
+        // First class callable syntax, with named arguments
+        // https://www.php.net/manual/en/functions.first_class_callable_syntax.php
+        // https://www.php.net/manual/en/functions.arguments.php#functions.named-arguments
         $this->{$action}(...$parameters);
     }
 }

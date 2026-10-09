@@ -128,6 +128,15 @@ class User
         return max(0, time() - $timestamp);
     }
 
+    public function loggedInUserId(): ?int
+    {
+        if (!$this->isLoggedIn()) {
+            return null;
+        }
+
+        return Session::getVariable('loggedInUserId') ?? null;
+    }
+
     public function logout(): void
     {
         Session::destroy();

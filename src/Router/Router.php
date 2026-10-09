@@ -2,6 +2,7 @@
 
 namespace Smc\Router;
 
+use Smc\Controllers\PageController;
 use Smc\Controllers\ControllerInterface;
 use Smc\Controllers\DashboardController;
 use Smc\Controllers\ErrorController;
@@ -49,6 +50,25 @@ class Router
                     'class' => DashboardController::class,
                     'action' => 'index',
                     'parameters' => [],
+                ],
+                '/pages/' => [
+                    'class' => PageController::class,
+                    'action' => 'index',
+                    'parameters' => [],
+                ],
+                '/page/new/' => [
+                    'class' => PageController::class,
+                    'action' => 'new',
+                    'parameters' => [
+                        'method' => $method,
+                    ],
+                ],
+                '/page/{number}/' => [
+                    'class' => PageController::class,
+                    'action' => 'page',
+                    'parameters' => [
+                        'id' => $captures[0],
+                    ],
                 ],
                 default => throw new NotFoundException($path),
             };

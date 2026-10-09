@@ -1,0 +1,10 @@
+{% extends "@backend/base.html.twig" %}
+
+{% block title %}Page{% endblock %}
+
+{% block content %}
+  <h1>{{ page.title }}</h1>
+  Slug: {{ page.slug }}<br>
+  Page-dump:<br>
+  {{ dump(page) }}
+{% endblock %}
