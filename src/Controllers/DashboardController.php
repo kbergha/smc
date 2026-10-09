@@ -4,6 +4,7 @@ namespace Smc\Controllers;
 
 use Smc\Guards\LoginGuard;
 use Smc\Guards\SessionGuard;
+use Smc\Renderer\Renderer;
 
 class DashboardController extends Controller
 {
@@ -32,6 +33,6 @@ class DashboardController extends Controller
      */
     public function index(): void
     {
-        echo "Hello dashboard world!";
+        new Renderer('@backend/dashboard.html.twig')->render();
     }
 }

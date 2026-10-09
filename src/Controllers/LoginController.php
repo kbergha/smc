@@ -5,6 +5,7 @@ namespace Smc\Controllers;
 use Smc\Guards\CsrfGuard;
 use Smc\Guards\SessionGuard;
 use Smc\Renderer\Renderer;
+use Smc\Router\RedirectException;
 use Smc\User\User;
 
 class LoginController extends Controller
@@ -17,6 +18,7 @@ class LoginController extends Controller
         return [
             'loginForm' => ['GET'],
             'login' => ['POST'],
+            'logout' => ['GET', 'POST'],
         ];
     }
 
@@ -38,6 +40,16 @@ class LoginController extends Controller
     {
         $user = new User();
         $user->login($_POST['username'] ?? null, $_POST['password'] ?? null);
+    }
+
+    /**
+     * @noinspection PhpUnused
+     */
+    public function logout(): void
+    {
+        $user = new User();
+        $user->logout();
+        throw new RedirectException('/');
     }
 
     /**

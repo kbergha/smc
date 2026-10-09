@@ -40,6 +40,11 @@ class Router
                     'action' => 'login',
                     'parameters' => [],
                 ],
+                '/logout/' => [
+                    'class' => LoginController::class,
+                    'action' => 'logout',
+                    'parameters' => [],
+                ],
                 '/dashboard/' => [
                     'class' => DashboardController::class,
                     'action' => 'index',
