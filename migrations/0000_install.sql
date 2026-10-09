@@ -1,11 +1,17 @@
 /* === Users === */
 CREATE TABLE IF NOT EXISTS users(
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  username    TEXT UNIQUE NOT NULL,
-  password    TEXT NOT NULL,
-  created     TEXT NOT NULL DEFAULT CURRENT_DATE,
-  last_login  TEXT DEFAULT NULL
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  username      TEXT UNIQUE NOT NULL,
+  password      TEXT NOT NULL,
+  status        INTEGER DEFAULT NULL,
+  created       TEXT NOT NULL DEFAULT CURRENT_DATE,
+  last_login    TEXT DEFAULT NULL
 ) STRICT;
+
+/* admin / password / require reset */
+INSERT INTO users (username, password, status)
+VALUES ('admin', '$2y$12$NDaH6etcZwSuZtcxIkD0EumdecXMRMoWnX.uvePUleM7FNruCD4LO', 2)
+ON CONFLICT(username) DO NOTHING;
 
 /* === Pages === */
 CREATE TABLE IF NOT EXISTS pages(

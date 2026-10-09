@@ -8,7 +8,7 @@ final class Connection
 {
     private static ?PDO $pdo = null;
 
-    public static function get(): PDO
+    public static function getPdo(): PDO
     {
         return self::$pdo ??= self::create();
     }

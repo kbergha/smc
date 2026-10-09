@@ -7,18 +7,12 @@ use Smc\Controllers\DashboardController;
 use Smc\Controllers\ErrorController;
 use Smc\Controllers\LoginController;
 use Smc\Controllers\OptionsController;
+use Smc\Controllers\RedirectController;
 use Smc\Guards\GuardException;
+use Smc\Renderer\RendererException;
 
 class Router
 {
-    /**
-     * Segments that take a slug in the segment directly after them, so that '/tag/php/' becomes '/tag/{slug}/'
-     * while an ordinary page path such as '/about/' is left for the PageController to resolve.
-     *
-     * @var list<string>
-     */
-    private const array SLUG_PREFIXES = [];
-
     public function __construct()
     {
 
@@ -28,7 +22,7 @@ class Router
     {
         $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
         $path = self::normalizePath(
-            parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/'
+            parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/'
         );
 
         [$pattern, $captures] = self::extractCaptures($path);
@@ -36,9 +30,19 @@ class Router
 
         try {
             $controller = match ($pattern) {
-                '/', '/login/' => [
+                '/' => [
                     'class' => LoginController::class,
                     'action' => 'loginForm',
+                    'parameters' => [],
+                ],
+                '/login/' => [
+                    'class' => LoginController::class,
+                    'action' => 'login',
+                    'parameters' => [],
+                ],
+                '/logout/' => [
+                    'class' => LoginController::class,
+                    'action' => 'logout',
                     'parameters' => [],
                 ],
                 '/dashboard/' => [
@@ -50,9 +54,6 @@ class Router
             };
 
             // OPTIONS is answered generically: the Allow header is the whole response, so the resolved action never runs.
-            //
-            // This does not verify that the resource exists. Every unmatched path resolves to PageController,
-            // so OPTIONS on an unknown slug / path answers 204 where GET would answer 404. Accepted for now...
             if ($method === 'OPTIONS') {
                 self::dispatch([
                     'class' => OptionsController::class,
@@ -72,7 +73,17 @@ class Router
             self::dispatch($controller);
 
             return;
-
+        } catch (RedirectException $e) {
+            self::dispatch([
+                'class' => RedirectController::class,
+                'action' => 'redirect',
+                'parameters' => [
+                    'location' => $e->location,
+                    'code' => $e->getCode(),
+                    'method' => $method,
+                ],
+            ]);
+            return;
         } catch (NotFoundException|GuardException $e) {
             $controller = [
                 'class' => ErrorController::class,
@@ -94,6 +105,16 @@ class Router
                     'allowed' => $e->allowed,
                 ]
             ];
+        } catch (RendererException $e) {
+            $controller = [
+                'class' => ErrorController::class,
+                'action' => 'show',
+                'parameters' => [
+                    'code' => $e->getCode(),
+                    'path' => $path,
+                    'message' => $e->getMessage(),
+                ]
+            ];
         }
 
         // Invoke / dispatch the error controller from the catch statements above.
@@ -104,7 +125,7 @@ class Router
     /**
      * Hands a resolved route to its controller.
      *
-     * @param array{class: class-string<ControllerInterface>, action: string, parameters: array} $controller
+     * @param array{class: class-string<ControllerInterface>, action: string, parameters: array<string, mixed>} $controller
      */
     private static function dispatch(array $controller): void
     {
@@ -159,11 +180,12 @@ class Router
      * Rewrites dynamic segments to placeholders so a path can still be matched
      * as a literal string, and returns the values that were replaced.
      *
-     *   '/page/12/'        -> ['/page/{number}/',            [12]]
-     *   '/tag/php/'        -> ['/tag/{slug}/',               ['php']]    (with 'tag' in SLUG_PREFIXES)
-     *   '/some/123/path/'  -> ['/some/{number}/path/',       [123]]      ('path' is not after a prefix, so it stays literal)
-     *   '/tag/php/page/2/' -> ['/tag/{slug}/page/{number}/', ['php', 2]] (with 'tag' in SLUG_PREFIXES)
-     *   '/about/'          -> ['/about/',                    []]
+     *   '/page/12/'        -> ['/page/{number}/',       [12]]
+     *   '/some/123/path/'  -> ['/some/{number}/path/',  [123]]
+     *   '/dashboard/'      -> ['/dashboard/',           []]
+     *
+     * Only digits are dynamic. Text segments stay literal, since the backend
+     * addresses everything by id and nothing resolves a slug any more.
      *
      * Captures are positional and in path order: the matching route decides what
      * each one means.
@@ -186,15 +208,6 @@ class Router
             if (ctype_digit($segment)) {
                 $captures[] = (int) $segment;
                 $segments[$index] = '{number}';
-
-                continue;
-            }
-
-            // A slug is not, so it is only recognised where a prefix says one
-            // belongs. Otherwise, every path would become '/{slug}/'.
-            if ($index > 0 && in_array($original[$index - 1], self::SLUG_PREFIXES, true)) {
-                $captures[] = $segment;
-                $segments[$index] = '{slug}';
             }
         }
 
@@ -206,6 +219,7 @@ class Router
         $path = trim($path, '/');
         $path = "/{$path}/";
 
-        return preg_replace('#/{2,}#', '/', $path);
+        // Null means PCRE itself failed; the uncollapsed path is still a usable answer.
+        return preg_replace('#/{2,}#', '/', $path) ?? $path;
     }
 }

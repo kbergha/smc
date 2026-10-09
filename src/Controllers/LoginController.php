@@ -2,7 +2,11 @@
 
 namespace Smc\Controllers;
 
+use Smc\Guards\CsrfGuard;
 use Smc\Guards\SessionGuard;
+use Smc\Renderer\Renderer;
+use Smc\Router\RedirectException;
+use Smc\User\User;
 
 class LoginController extends Controller
 {
@@ -14,6 +18,7 @@ class LoginController extends Controller
         return [
             'loginForm' => ['GET'],
             'login' => ['POST'],
+            'logout' => ['GET', 'POST'],
         ];
     }
 
@@ -24,6 +29,7 @@ class LoginController extends Controller
     {
         return [
             '*' => SessionGuard::class,
+            'login' => CsrfGuard::class,
         ];
     }
 
@@ -32,6 +38,18 @@ class LoginController extends Controller
      */
     public function login(): void
     {
+        $user = new User();
+        $user->login($_POST['username'] ?? null, $_POST['password'] ?? null);
+    }
+
+    /**
+     * @noinspection PhpUnused
+     */
+    public function logout(): void
+    {
+        $user = new User();
+        $user->logout();
+        throw new RedirectException('/');
     }
 
     /**
@@ -39,6 +57,6 @@ class LoginController extends Controller
      */
     public function loginForm(): void
     {
-        echo "Hello world!";
+        new Renderer('@backend/loginForm.html.twig')->render();
     }
 }

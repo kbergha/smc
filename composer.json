@@ -4,7 +4,13 @@
   "type": "project",
   "license": "UNLICENSE",
   "prefer-stable": true,
+  "require": {
+    "twig/twig": "v3.30.0",
+    "ext-pdo": "*",
+    "ext-sqlite3": "*"
+  },
   "require-dev": {
+    "phpstan/phpstan": "2.2.16",
     "phpunit/phpunit": "^13.3"
   },
   "autoload": {
@@ -31,7 +37,9 @@
       "ext-intl": "1",
       "ext-mbstring": "1",
       "ext-sqlite3": "1",
-      "ext-uri": "1"
+      "ext-uri": "1",
+      "ext-tidy": "1",
+      "ext-pdo": "1"
     },
     "policy": {
       "advisories": {
@@ -41,14 +49,5 @@
         "block": true
       }
     }
-  },
-  "require": {
-    "php": "^8.5",
-    "ext-sqlite3": "*",
-    "ext-pdo_sqlite": "*",
-    "ext-pdo": "*",
-    "ext-mbstring": "*",
-    "ext-uri": "*",
-    "ext-ctype": "*"
   }
 }

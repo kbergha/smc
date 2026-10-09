@@ -2,6 +2,8 @@
 
 namespace Smc\Controllers;
 
+use Smc\Router\Header;
+
 class ErrorController extends Controller
 {
     /**
@@ -21,15 +23,15 @@ class ErrorController extends Controller
      */
     public function show(int $code, string $path, ?string $message, ?array $allowed = null): void
     {
-        // Move to some Header-class?
-        http_response_code($code);
+        Header::setStatusCode($code);
 
         // RFC 9110 requires a 405 to advertise the methods that are supported.
         // Skipped when empty, since "Allow:" with no value is not a valid header.
         if ($allowed !== null && $allowed !== []) {
-            header('Allow: ' . implode(', ', $allowed));
+            Header::setHeader('Allow', implode(', ', $allowed));
         }
 
+        $message = htmlspecialchars($message ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         echo "Sorry, something went wrong! {$code} - {$message}";
     }
 }

@@ -31,10 +31,11 @@ RUN apt-get update \
     && apt-get install -y apt-utils
 
 
-RUN apt-get install -y libzip-dev zip libicu-dev \
+RUN apt-get install -y libzip-dev zip libicu-dev libtidy-dev \
     && docker-php-ext-configure zip \
     && docker-php-ext-configure intl \
-    && docker-php-ext-install zip intl bcmath
+    && docker-php-ext-configure tidy \
+    && docker-php-ext-install zip intl bcmath tidy
 
 # OPCache
 # RUN docker-php-ext-install opcache && docker-php-ext-configure opcache --enable-opcache
@@ -49,6 +50,7 @@ COPY ./public/index.php /app/public/index.php
 COPY ./src /app/src
 COPY ./migrations /app/migrations
 COPY ./commands /app/commands
+COPY ./templates /app/templates
 
 # Make directories
 RUN mkdir -p /app/public/files
@@ -62,7 +64,6 @@ COPY ./.docker/config/php.ini $PHP_INI_DIR/php.ini
 
 # Vendor folder from composer
 COPY --from=composer /app/vendor /app/vendor
-
 
 # Apache config
 

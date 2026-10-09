@@ -24,6 +24,7 @@ services:
       - ./vendor:/app/vendor
       - ./commands:/app/commands
       - ./migrations:/app/migrations
+      - ./templates:/app/templates
       - ./.docker/config/x-local-development-overrides-php.ini:/usr/local/etc/php/conf.d/x-local-development-overrides-php.ini
       - smc-files:/app/public/files
       - smc-db:/app/sqlite

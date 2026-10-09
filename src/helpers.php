@@ -4,7 +4,7 @@ if(!function_exists('pre_dump')) {
     function pre_dump(mixed $var): void
     {
         echo '<pre>';
-        print_r($var);
+        var_dump($var);
         echo '</pre>';
     }
 }
