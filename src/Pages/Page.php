@@ -59,7 +59,7 @@ class Page
         $this->userID = $result['user_id'];
         $this->content = null;
 
-        unset($result, $statement);
+        unset($result);
 
         return true;
     }
@@ -85,13 +85,13 @@ class Page
 
         if ($this->pageID === null) {
             // New page, get last insert id.
-            $this->pageID = $this->pdo->lastInsertId() ? (int) $this->pdo->lastInsertId() : null;
+            $this->pageID = $this->pdo()->lastInsertId() ? (int) $this->pdo()->lastInsertId() : null;
         }
 
         return $result;
     }
 
-    protected function loadFromDb()
+    protected function loadFromDb(): mixed
     {
         $statement = $this->pdo()->prepare('SELECT * FROM '.$this->table.' WHERE id = :id');
         $id = $this->pageID; // Or else: indirect property modification

@@ -2,6 +2,7 @@
 
 namespace Smc\Twig;
 
+use Smc\Pages\Page;
 use Smc\Pages\Pages;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
@@ -17,6 +18,9 @@ class PagesExtension extends AbstractExtension
         ];
     }
 
+    /**
+     * @return ?array<Page>
+     */
     public function getPages(int $limit = 10, int $offset = 0): ?array
     {
         $pages = new Pages();

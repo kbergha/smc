@@ -37,6 +37,9 @@ class Renderer
         }
     }
 
+    /**
+     * @param array<mixed> $context
+     */
     public function render(array $context = []): void
     {
         // todo: tidy, men med html5

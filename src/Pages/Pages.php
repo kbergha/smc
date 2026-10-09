@@ -7,7 +7,6 @@ use RuntimeException;
 use Smc\Database\Connection;
 use Smc\User\User;
 
-// todo: class Pages implements \Iterator ?
 class Pages
 {
     protected ?PDO $pdo = null;
@@ -18,7 +17,9 @@ class Pages
         return $this->pdo ??= Connection::getPdo();
     }
 
-    // todo: array of Page
+    /**
+     * @return ?array<Page>
+     */
     public function getPages(int $limit = 10, int $offset = 0): ?array
     {
         $statement = $this->pdo()->prepare('SELECT id FROM '.$this->table.' LIMIT :limit OFFSET :offset');
