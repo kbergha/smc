@@ -24,6 +24,6 @@ class PagesExtension extends AbstractExtension
     public function getPages(int $limit = 10, int $offset = 0): ?array
     {
         $pages = new Pages();
-        return $pages->getPages();
+        return $pages->getPages($limit, $offset);
     }
 }
