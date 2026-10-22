@@ -18,23 +18,34 @@ class Pages
     }
 
     /**
-     * @return ?array<Page>
+     * @return ?list<array<string, mixed>>
      */
     public function getPages(int $limit = 10, int $offset = 0): ?array
     {
-        $statement = $this->pdo()->prepare('SELECT id FROM '.$this->table.' LIMIT :limit OFFSET :offset');
+        $statement = $this->pdo()->prepare('SELECT id, title FROM '.$this->table.' ORDER BY id ASC LIMIT :limit OFFSET :offset');
         $statement->bindParam(':limit', $limit, PDO::PARAM_INT);
         $statement->bindParam(':offset', $offset, PDO::PARAM_INT);
         $statement->execute();
 
-        $result = $statement->fetch(PDO::FETCH_ASSOC);
+        $result = $statement->fetchAll();
 
-        if ($result === false) {
+        if (count($result) === 0) {
             return null;
         }
 
-        // todo
-        return [];
+        $pages = [];
+
+        foreach ($result as $row) {
+
+            $pages[] = [
+                'pageID' => $row['id'],
+                'title' => $row['title'],
+            ];
+        }
+
+        unset($statement, $result);
+
+        return $pages;
     }
 
     public function createNewPage(string $title, string $slug): Page

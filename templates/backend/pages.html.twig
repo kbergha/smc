@@ -4,5 +4,14 @@
 
 {% block content %}
   <h1>All pages</h1>
-  {{ pagesGetPages() }}
+  {% set pages = pagesGetPages() %}
+  {% if pages %}
+  <ul>
+    {% for page in pages %}
+      <li><a href="/page/{{ page.pageID }}/">{{ page.title }}</a></li>
+    {% endfor %}
+  </ul>
+  {% else %}
+    No pages yet. <a href="/page/new/">Create one!</a>
+  {% endif %}
 {% endblock %}

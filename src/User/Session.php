@@ -2,6 +2,8 @@
 
 namespace Smc\User;
 
+use Smc\Router\Header;
+
 class Session
 {
     /**
@@ -11,8 +13,11 @@ class Session
      */
     public static function start(): bool
     {
-        session_cache_limiter('nocache');
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            return true;
+        }
 
+        Header::setNoCache();
         return session_start([
             'cookie_lifetime' => 86400, // 1 day
             'cookie_httponly' => true,
@@ -55,5 +60,22 @@ class Session
         if (session_status() !== PHP_SESSION_ACTIVE) {
             throw new SessionException('Session is not active', 500);
         }
+    }
+
+    // Todo: support multiple. type (fail, success), move to own class?
+    public static function setFlashMessage(string $message): void
+    {
+        self::start();
+        self::setVariable('flash', $message);
+    }
+
+    public static function getFlashMessage(): ?string
+    {
+        return self::getVariable('flash');
+    }
+
+    public static function deleteFlashMessage(): void
+    {
+        self::unsetVariable('flash');
     }
 }

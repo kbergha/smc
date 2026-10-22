@@ -3,12 +3,15 @@
 namespace Smc\Controllers;
 
 use RuntimeException;
+use Smc\Guards\CsrfGuard;
 use Smc\Guards\LoginGuard;
 use Smc\Guards\SessionGuard;
 use Smc\Pages\Page;
 use Smc\Pages\Pages;
 use Smc\Renderer\Renderer;
 use Smc\Router\RedirectException;
+use Smc\User\Session;
+use Smc\User\User;
 
 class PageController extends Controller
 {
@@ -20,7 +23,7 @@ class PageController extends Controller
         return [
             'index' => ['GET'],
             'new' => ['GET', 'POST'],
-            'page' => ['GET'],
+            'page' => ['GET', 'POST'],
         ];
     }
 
@@ -31,6 +34,9 @@ class PageController extends Controller
     {
         return [
             '*' => [SessionGuard::class, LoginGuard::class],
+            // @todo: but only for post requests.
+            //'new' => [CsrfGuard::class],
+            //'page' => [CsrfGuard::class],
         ];
     }
 
@@ -45,13 +51,33 @@ class PageController extends Controller
     /**
      * @noinspection PhpUnused
      */
-    public function page(int $id): void
+    public function page(int $id, string $method): void
     {
         $page = new Page($id);
-        if (!$page->load()) {
-            throw new RuntimeException('Page not found');
+
+        if ($method === 'POST') {
+            // Update page
+
+            $page->set(
+                $_POST['title'],
+                $_POST['slug'],
+                new User()->loggedInUserId() ?? 0,
+                null,
+            );
+
+            if ($page->save() === false) {
+                throw new RuntimeException('Failed to save page.', 500);
+            }
+
+            Session::setFlashMessage('Page saved successfully.');
+
+            throw new RedirectException('/page/'. $page->pageID .'/', 302);
+        } else {
+            if (!$page->load()) {
+                throw new RuntimeException('Page not found');
+            }
+            new Renderer('@backend/page.html.twig')->render(['page' => $page]);
         }
-        new Renderer('@backend/page.html.twig')->render(['page' => $page]);
     }
 
     /**

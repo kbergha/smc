@@ -6,6 +6,13 @@
     {% endblock %}
   </head>
   <body>
+    {% set flashMessage = flashGetMessage() %}
+    {% if flashMessage %}
+      {% do flashDeleteMessage() %}
+      <div id="flash-message">
+        {{ flashMessage }}
+      </div>
+    {% endif %}
     <div id="content">
       {% block content %}{% endblock %}
     </div>

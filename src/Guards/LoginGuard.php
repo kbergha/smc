@@ -3,6 +3,7 @@
 namespace Smc\Guards;
 
 use Smc\Router\RedirectException;
+use Smc\User\Session;
 use Smc\User\User;
 
 class LoginGuard implements GuardInterface
@@ -14,7 +15,7 @@ class LoginGuard implements GuardInterface
         // todo: period or config
         if (!$user->isLoggedIn() || $user->loggedInForSeconds() >= 86400) {
             $user->logout();
-            // todo: set flash message?
+            Session::setFlashMessage('Logged out due to inactivity / timeout');
             throw new RedirectException('/');
         }
     }

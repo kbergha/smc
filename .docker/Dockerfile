@@ -6,7 +6,7 @@ COPY . .
 RUN composer dumpautoload -a --no-dev
 
 # MultiStage - PHP Webserver
-FROM php:8.5.10-apache-trixie
+FROM php:8.5.12-apache-trixie
 
 # User / permissions setup.
 

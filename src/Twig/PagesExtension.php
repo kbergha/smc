@@ -19,7 +19,7 @@ class PagesExtension extends AbstractExtension
     }
 
     /**
-     * @return ?array<Page>
+     * @return ?list<array<string, mixed>>
      */
     public function getPages(int $limit = 10, int $offset = 0): ?array
     {

@@ -3,6 +3,7 @@
 namespace Smc\Renderer;
 
 use Smc\Twig\CsrfExtension;
+use Smc\Twig\FlashMessageExtension;
 use Smc\Twig\PagesExtension;
 use Twig\Environment;
 use Twig\Error\Error as TwigError;
@@ -30,6 +31,7 @@ class Renderer
             $twig->addExtension(new DebugExtension);
             $twig->addExtension(new CsrfExtension());
             $twig->addExtension(new PagesExtension());
+            $twig->addExtension(new FlashMessageExtension());
 
             $this->template = $twig->load($templateToRender);
         } catch (TwigError $e) {

@@ -3,8 +3,10 @@
 namespace Smc\Pages;
 
 use PDO;
+use RuntimeException;
 use Smc\Database\Connection;
-use Smc\User\User;
+use Smc\Input\Sanitise;
+use Smc\Input\Validate;
 
 class Page
 {
@@ -35,7 +37,6 @@ class Page
 
     public function set(string $title, string $slug, int $userID, ?string $content): void
     {
-        // todo: clean / validate / sanitize
         $this->title = $title;
         $this->slug = $slug;
         $this->userID = $userID;
@@ -66,7 +67,12 @@ class Page
 
     public function save(): bool
     {
-        // todo: validate slug.
+        $this->slug = Sanitise::slug($this->slug);
+
+        if (Validate::slug($this->slug, $this->pageID) === false) {
+            throw new RuntimeException("Slug already exists.", 406);
+        }
+
         // todo: add content column
         if ($this->pageID === null) {
             // New page
@@ -98,6 +104,6 @@ class Page
         $statement->bindParam(':id', $id, PDO::PARAM_INT);
         $statement->execute();
 
-        return $statement->fetch(PDO::FETCH_ASSOC);
+        return $statement->fetch();
     }
 }

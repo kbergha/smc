@@ -48,23 +48,24 @@ final class Validate
         return true;
     }
 
-    public static function slug(string $slug): bool
+    public static function slug(string $slug, ?int $pageID): bool
     {
-        // First sanitise.
-        $slug = Sanitise::slug($slug);
-
-        if (!is_string($slug)) {
-            return false;
-        }
-
-        // Then check for existing usage.
+        // Check for existing usage.
         $pdo = Connection::getPdo();
 
-        // todo: implement logic ...
+        $statement = $pdo->prepare('SELECT id FROM pages WHERE slug = :slug LIMIT 1');
+        if ($pageID !== null) {
+            $statement = $pdo->prepare('SELECT id FROM pages WHERE slug = :slug and id != :id LIMIT 1');
+            $statement->bindParam(':id', $pageID);
+        }
 
-        return true;
+        $statement->bindParam(':slug', $slug);
+        $statement->execute();
+
+        $result = $statement->fetch();
+        unset($statement, $pdo);
+
+        return !$result;
     }
-
-
 
 }

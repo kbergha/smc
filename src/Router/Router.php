@@ -67,6 +67,7 @@ class Router
                     'class' => PageController::class,
                     'action' => 'page',
                     'parameters' => [
+                        'method' => $method,
                         'id' => $captures[0],
                     ],
                 ],

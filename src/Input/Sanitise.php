@@ -2,38 +2,43 @@
 
 namespace Smc\Input;
 
+use RuntimeException;
+use Transliterator;
+
 final class Sanitise
 {
-    const array SLUG_CHARACTER_REPLACEMENT_MAP = [
-        'æ' => 'ae', // LATIN SMALL LETTER AE (U+00E6)
-        'ø' => 'oe', // LATIN SMALL LETTER O WITH STROKE (U+00F8)
-        'å' => 'aa', // LATIN SMALL LETTER A WITH RING ABOVE (U+00E5)
-        'å' => 'aa', // LATIN SMALL LETTER A (U+0061) + COMBINING RING ABOVE (U+030A)
-    ];
 
+    // Not really needed due to Twig autoescaping?
     public static function string(string $input): string
     {
         return htmlspecialchars(trim($input), ENT_QUOTES | ENT_HTML5, 'UTF-8');
     }
 
-    public static function slug(string $slug): ?string
+    public static function slug(string $slug): string
     {
-        $search = array_keys(self::SLUG_CHARACTER_REPLACEMENT_MAP);
-        $replace = array_values(self::SLUG_CHARACTER_REPLACEMENT_MAP);
+        // https://bartvanraaij.dev/2020-10-17-converting-utf8-strings-to-ascii-using-icu-transliterator/
+        // https://unicode-org.github.io/icu/userguide/transforms/general/#overview
+        $rules = [
+            ':: Any-Latin', // Any script to Latin
+            ':: NFKD', // Split characters into base letters and combining marks. Normalization Form Compatibility Decomposition
+            ':: [:Nonspacing Mark:] Remove', // Remove combining marks (accents and diacritics)
+            ':: Latin-ASCII', // Latin script to ASCII
+            ':: Lower()', // To lower case
+            "[^a-z0-9]+ > '-'", // Any run of non-matching characters is replaced by one dash, e.g: "bob !" -> "bob-"
+        ];
+        $transliterator = Transliterator::createFromRules(implode(';', $rules) . ';');
 
-        $processed = mb_strtolower(trim($slug), 'UTF-8');
-        $processed = preg_replace(
-            array_map(fn($s) => '/' . preg_quote($s, '/') . '/u', $search), // i.e. "/æ/u"
-            $replace,
-            $processed
-        );
-
-        // Some sort of error from preg_replace.
-        if ($processed === null) {
-            return null;
+        if ($transliterator === null) {
+            throw new RuntimeException('Transliterator rules not valid', 500);
         }
 
-        // Remove anything not a to z, 0 to 9 and -
-        return preg_replace('/[^a-z0-9-]+/', '-', $processed);
+        $slug = $transliterator->transliterate($slug);
+
+        if ($slug === false) {
+            throw new RuntimeException('Transliterator failed', 500);
+        }
+
+        // Remove any leading and trailing dash, e.g: "-bob-" -> "bob"
+        return trim($slug, '-');
     }
 }
